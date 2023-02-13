@@ -20,26 +20,26 @@ y_drop = 149.16566748
 
 def takeoff(height):
     while drone.is_armable is not True:
-        print("Drone is not armable")
+        #print("Drone is not armable")
         time.sleep(1)
 
 
-    print("Drone is armable")
+    #print("Drone is armable")
 
     drone.mode = VehicleMode("GUIDED")
 
     drone.armed = True
 
     while drone.armed is not True:
-        print("Drone is arming...")
+        #print("Drone is arming...")
         time.sleep(0.5)
 
-    print("Drone has just armed")
+    #print("Drone has just armed")
 
     drone.simple_takeoff(height)
     
     while drone.location.global_relative_frame.alt < height * 0.9:
-        print("Drone is rising")
+        #print("Drone is rising")
         time.sleep(1)
 
 def add_mission():
@@ -64,7 +64,7 @@ def add_mission():
     drone_command.add(Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
     drone_command.upload()
-    print("Commands are loading...")
+    #print("Commands are loading...")
 
 
 def drop_ball(x,y):
@@ -88,7 +88,7 @@ def drop_ball(x,y):
     drone_command.add(Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
     drone_command.upload()
-    print("Commands are loading...")
+    #print("Commands are loading...")
 
 
 try:
@@ -106,11 +106,11 @@ try:
     while True:
         next_waypoint = drone_command.next
 
-        print(f"Next command : {next_waypoint}")
+        #print(f"Next command : {next_waypoint}")
         time.sleep(1)
 
         if next_waypoint is 5:
-            print("First Tour Completed")
+            #print("First Tour Completed")
             break
 
 
@@ -121,20 +121,21 @@ try:
     while True:
         next_waypoint = drone_command.next
 
-        print(f"Next command : {next_waypoint}")
+        #print(f"Next command : {next_waypoint}")
         time.sleep(1)
         if next_waypoint is 3:
-            print("Landing...")
+            #print("Landing...")
         if next_waypoint is 4:
-            print("Mission Completed")
+            #print("Mission Completed")
             break
         
 except:
-    print("An error occured")
+    pass
+    #print("An error occured")
 
 finally:
     drone.mode = VehicleMode("RTL")
-    print("Drone Has Returned to Home")
+    #print("Drone Has Returned to Home")
 
 
    
