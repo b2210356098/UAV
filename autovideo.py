@@ -17,7 +17,6 @@ gps_loc=[[ -35.36291924, 149.16524853],
 x_drop = -35.36355641
 y_drop = 149.16566748
         
-"""
 x_center= 0
 y_center = 0
 
@@ -38,7 +37,7 @@ founded = False
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)
 cap.set(4, 480)
-"""
+
 
 
 def takeoff(height):
@@ -129,7 +128,7 @@ try:
     while True:
         next_waypoint = drone_command.next
         if checker==next_waypoint:
-            """
+            
             #Person Detection
             try:
                 success, img = cap.read()
@@ -162,7 +161,7 @@ try:
 
             except :
                 pass
-            """
+            
             
             continue
         else:
