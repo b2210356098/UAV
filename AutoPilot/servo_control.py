@@ -1,3 +1,4 @@
+import GPIO
 def servo_control(repeat, sleep):
   GPIO.setmode(GPIO.BOARD)
   GPIO.setup(33, GPIO.OUT)
@@ -15,4 +16,5 @@ def servo_control(repeat, sleep):
   except :
       p.stop()
       GPIO.cleanup()
-
+      
+servo_control(3, 0.5)
