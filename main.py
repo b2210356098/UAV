@@ -12,19 +12,23 @@ plane = connect("127.0.0.1:14550", wait_ready=False)
 home_x = plane.location.global_frame.lat
 home_y = plane.location.global_frame.lon
 
-altitude = 15
+altitude = 25
 
+#Waypoints
 gps_loc = [[-35.36291924, 149.16524853],
            [-35.36291127, 149.16568725],
            [-35.36322241, 149.16564782]]
 
+# Initialize person coordinates for worst case
 person_gps_x, person_gps_y = (gps_loc[0][0] + gps_loc[1][0]) / 2, (gps_loc[0][1] + gps_loc[1][1]) / 2
 
+# How many photo will take for verification 
 photo_limit = 0
 
+# Coordinates of person in photo
 x_center = 0
 y_center = 0
-shapes = [500, 500]
+shapes = [600, 480] #Photo shapes initialization
 
 # Person Recognization Model
 
@@ -48,17 +52,17 @@ cap.set(4, 480)
 # It brings some plane parameters and return real gps coordinates of person
 def gps_calculation(plane_lat,plane_lon,plane_lat2,plane_lon2,photo_x,photo_y,image):
 
-    # Fotoğraftaki kordinatları alarak tespit edilen cismin uçağa olan gerçek uzaklığını döndüyor
+    # Takes coordinates of photo and returns real distance between plane and person
     def distance_calculation(x, y, image):
         cam_area = 1
         real_area = 55
         ratio = real_area / cam_area
 
-        # Merkezi orijin olarak alıyor
+        # Makes center origin
         x = x - image.shape[1] / 2
         y = -y + image.shape[0] / 2
 
-        # Tekrardan image.shape'e böldük çünkü x ölçeğinin 0 ile 1 arasında olmasını sağlıyor
+        # It makes coordinates between 0 and 1
         x = x / image.shape[1]
         y = y / image.shape[0]
 
@@ -69,15 +73,14 @@ def gps_calculation(plane_lat,plane_lon,plane_lat2,plane_lon2,photo_x,photo_y,im
 
     plane_dist_x, plane_dist_y = distance_calculation(photo_x, photo_y, image)
 
-    # Uçağın uçtuğu yol ile  coğrafik kuzey noktası arasındaki açıyı buluyor
+    # Finds angle between plane and geographic north point
     angle = math.atan((plane_lat2 - plane_lat) / (plane_lon2 - plane_lon)) * 57.2957795
 
-
-    # Hedefin coğrafik kordinatlara göre uçağa olan uzaklığını buluyor
+    # Finds distance between person and plane  
     real_x = plane_dist_x * math.cos(angle) + plane_dist_y * math.sin(angle)
     real_y = -plane_dist_x * math.sin(angle) + plane_dist_y * math.cos(angle)
 
-    # Hedefin gps kordinatlarını buluyor
+    # Finds real gps coordinates
     gps_x = plane_lat + (180 / math.pi) * (real_y / 6378137)
     gps_y = plane_lon + (180 / math.pi) * (real_x / 6378137) / math.cos(plane_lat * 57.2957795)
 
