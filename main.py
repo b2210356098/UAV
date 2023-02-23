@@ -147,7 +147,8 @@ def gps_calculation(plane_lat, plane_lon, plane_lat2, plane_lon2, photo_x, photo
     try:
         angle = math.atan((plane_lat2 - plane_lat) / (plane_lon2 - plane_lon)) * 57.2957795
 
-    except:
+    except Exception as e:
+        print(e)
         angle = 0
     # Hedefin coğrafik kordinatlara göre uçağa olan uzaklığını buluyor
     real_x = plane_dist_x * math.cos(angle) + plane_dist_y * math.sin(angle)
