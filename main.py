@@ -124,22 +124,32 @@ def gps_calculation(plane_lat, plane_lon, plane_lat2, plane_lon2, photo_x, photo
 
     # Fotoğraftaki kordinatları alarak tespit edilen cismin uçağa olan gerçek uzaklığını döndüyor
     def distance_calculation(x, y, shape):
-        cam_area = 1
-        real_area = 55
-        ratio = math.sqrt(real_area / cam_area)
+               birim_kısa = math.sqrt((443 - 234) ** 2 + (76 - 61) ** 2)  # Defterin kısa kenarının birim uzunluğu
+               birim_uzun = math.sqrt((234 - 258) ** 2 + (76 - 368) ** 2)  # Defterin uzun kenarının birim uzunluğu
+               birim_alan = 640 * 480  # Toplam birim alan
 
-        # Merkezi orijin olarak alıyor
-        x = x - shape[1] / 2
-        y = -y + shape[0] / 2
+               reel_uzun = 29.5  # Defterin gerçekteki uzun kenarının cm cinsinden uzunluğu
+               reel_kısa = 20.8  # Defterin gerçekteki kısa kenarının cm cinsinden uzunluğu
+               reel_uzaklık = 158.5  # Kameranı ölçülen alana uzaklığı
+               reel_alan = birim_alan * (reel_kısa * reel_uzun) / (
+                           birim_uzun * birim_kısa)  # 158.5 cm uzaklıktaki kameranın gördüğü alan
 
-        # Tekrardan image.shape'e böldük çünkü x ölçeğinin 0 ile 1 arasında olmasını sağlıyor
-        x = x / shape[1]
-        y = y / shape[0]
+               yükseklik = 2500  # Hesaplanmak istenen yükseklik
+               yükseklik_alan = (reel_alan * (yükseklik ** 2)) / (
+                           reel_uzaklık ** 2)  # Hesaplanmak istenen yükseklikteki alanın cm2 değeri
+              
+               alan_oranı = yükseklik_alan / birim_alan  # Birimkarenin ifade ettiği cm2
+               birim_oranı = math.sqrt(alan_oranı)  # Her bir birimin ifade ettiği cm
 
-        real_x = x * ratio
-        real_y = y * ratio
 
-        return [real_x, real_y]
+               # Merkezi orijin olarak alıyor
+               x = x - shape[1] / 2
+               y = -y + shape[0] / 2
+
+               reel_x_cm = x * birim_oranı
+               reel_y_cm = y * birim_oranı
+
+               return [reel_x_cm,reel_y_cm]
 
     plane_dist_x, plane_dist_y = distance_calculation(photo_x, photo_y, shape)
 
@@ -149,7 +159,7 @@ def gps_calculation(plane_lat, plane_lon, plane_lat2, plane_lon2, photo_x, photo
 
     except Exception as e:
         print(e)
-        angle = 0
+        angle = 89
     # Hedefin coğrafik kordinatlara göre uçağa olan uzaklığını buluyor
     real_x = plane_dist_x * math.cos(angle) + plane_dist_y * math.sin(angle)
     real_y = -plane_dist_x * math.sin(angle) + plane_dist_y * math.cos(angle)
