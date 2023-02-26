@@ -124,32 +124,32 @@ def gps_calculation(plane_lat, plane_lon, plane_lat2, plane_lon2, photo_x, photo
 
     # Fotoğraftaki kordinatları alarak tespit edilen cismin uçağa olan gerçek uzaklığını döndüyor
     def distance_calculation(x, y, shape):
-               birim_kısa = math.sqrt((443 - 234) ** 2 + (76 - 61) ** 2)  # Defterin kısa kenarının birim uzunluğu
-               birim_uzun = math.sqrt((234 - 258) ** 2 + (76 - 368) ** 2)  # Defterin uzun kenarının birim uzunluğu
-               birim_alan = 640 * 480  # Toplam birim alan
+        birim_kısa = math.sqrt((443 - 234) ** 2 + (76 - 61) ** 2)  # Defterin kısa kenarının birim uzunluğu
+        birim_uzun = math.sqrt((234 - 258) ** 2 + (76 - 368) ** 2)  # Defterin uzun kenarının birim uzunluğu
+        birim_alan = 640 * 480  # Toplam birim alan
 
-               reel_uzun = 29.5  # Defterin gerçekteki uzun kenarının cm cinsinden uzunluğu
-               reel_kısa = 20.8  # Defterin gerçekteki kısa kenarının cm cinsinden uzunluğu
-               reel_uzaklık = 158.5  # Kameranı ölçülen alana uzaklığı
-               reel_alan = birim_alan * (reel_kısa * reel_uzun) / (
-                           birim_uzun * birim_kısa)  # 158.5 cm uzaklıktaki kameranın gördüğü alan
+        reel_uzun = 29.5  # Defterin gerçekteki uzun kenarının cm cinsinden uzunluğu
+        reel_kısa = 20.8  # Defterin gerçekteki kısa kenarının cm cinsinden uzunluğu
+        reel_uzaklık = 158.5  # Kameranı ölçülen alana uzaklığı
+        reel_alan = birim_alan * (reel_kısa * reel_uzun) / (
+                    birim_uzun * birim_kısa)  # 158.5 cm uzaklıktaki kameranın gördüğü alan
 
-               yükseklik = 2500  # Hesaplanmak istenen yükseklik
-               yükseklik_alan = (reel_alan * (yükseklik ** 2)) / (
-                           reel_uzaklık ** 2)  # Hesaplanmak istenen yükseklikteki alanın cm2 değeri
-              
-               alan_oranı = yükseklik_alan / birim_alan  # Birimkarenin ifade ettiği cm2
-               birim_oranı = math.sqrt(alan_oranı)  # Her bir birimin ifade ettiği cm
+        yükseklik = 2500  # Hesaplanmak istenen yükseklik
+        yükseklik_alan = (reel_alan * (yükseklik ** 2)) / (
+                    reel_uzaklık ** 2)  # Hesaplanmak istenen yükseklikteki alanın cm2 değeri
+
+        alan_oranı = yükseklik_alan / birim_alan  # Birimkarenin ifade ettiği cm2
+        birim_oranı = math.sqrt(alan_oranı)  # Her bir birimin ifade ettiği cm
 
 
-               # Merkezi orijin olarak alıyor
-               x = x - shape[1] / 2
-               y = -y + shape[0] / 2
+        # Merkezi orijin olarak alıyor
+        x = x - shape[1] / 2
+        y = -y + shape[0] / 2
 
-               reel_x_cm = x * birim_oranı
-               reel_y_cm = y * birim_oranı
+        reel_x_cm = x * birim_oranı
+        reel_y_cm = y * birim_oranı
 
-               return [reel_x_cm,reel_y_cm]
+        return [reel_x_cm,reel_y_cm]
 
     plane_dist_x, plane_dist_y = distance_calculation(photo_x, photo_y, shape)
 
@@ -157,8 +157,7 @@ def gps_calculation(plane_lat, plane_lon, plane_lat2, plane_lon2, photo_x, photo
     try:
         angle = math.atan((plane_lat2 - plane_lat) / (plane_lon2 - plane_lon)) * 57.2957795
 
-    except Exception as e:
-        print(e)
+    except:
         angle = 89
     # Hedefin coğrafik kordinatlara göre uçağa olan uzaklığını buluyor
     real_x = plane_dist_x * math.cos(angle) + plane_dist_y * math.sin(angle)
@@ -216,15 +215,11 @@ if pid > 0:
 
         plane_command.next = 0
           
-        #x_drop,y_drop = -35.36301703, 149.16547480
-        fly_to_person(x_drop, y_drop)
-
-    
+        fly_to_person(x_drop, y_drop)  
 
         plane.mode = VehicleMode("AUTO")  # Görev yüklemek icin  gerekli
         while True:
             next_waypoint = plane_command.next
-            
 
             print(f"Next command : {next_waypoint}")
             time.sleep(1)
@@ -269,14 +264,14 @@ else:
 
 
     founded_time = 0
-    wait_time = 3
+    wait_time = 2
     first_x = 0
     first_y = 0
     second_x = 0
     second_y = 0
     gps_taked = False
     photo_founded = False
-
+    photo_limit=5
     shape = 0
 
     while True:
@@ -312,7 +307,7 @@ else:
                 print(i+1, "-> It found a person ")
                 i += 1
 
-                if i >= 5 :
+                if i >= photo_limit :
                    
 
                     with open("current_gps.txt","r") as f:
