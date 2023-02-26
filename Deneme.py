@@ -3,7 +3,7 @@ from pymavlink import mavutil
 import time
 import cv2
 import math
-#import GPIO
+import GPIO
 
 # Connection
 plane = connect("127.0.0.1:14550", wait_ready=False)
@@ -81,7 +81,7 @@ def gps_calculation(plane_lat,plane_lon,plane_lat2,plane_lon2,photo_x,photo_y,im
     return(gps_x, gps_y)
 
 def servo_control(repeat, sleep):
-    """
+   
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(33, GPIO.OUT)
     p = GPIO.PWM(33, 50)
@@ -98,26 +98,21 @@ def servo_control(repeat, sleep):
     except :
       p.stop()
       GPIO.cleanup()
-      """
-    pass
+     
 
-def drop_ball(person_gps_x, person_gps_y,current_x, current_y):
+def drop_ball(person_gps_x, person_gps_y,current_x, current_y,vel):
     m,k,A,g = 1,1,1,9.8
 
     v_lim = math.sqrt(m*g/(k*A))
 
     ball_drop_time = plane.location.global_frame.alt*2/(3*v_lim)
 
-    drop_distance = velocity_of_plane*ball_drop_time
+    drop_distance = vel*ball_drop_time
 
     if ((current_x-person_gps_x)**2 + (current_y-person_gps_y)**2) <= drop_distance**2:
         servo_control(1,0.5)
 
-    """
 
-    if current_x > 4*(person_gps_x+home_x)/5 and current_y>4*(person_gps_y+home_y)/5:
-        servo_control(1,0.5)
-    """
 
 
 
@@ -169,7 +164,7 @@ try:
     person_gps_x = gps_calculation(first_x, first_y, second_x, second_y, shapes)[0]
     person_gps_y = gps_calculation(first_x, first_y, second_x, second_y, shapes)[1]
 
-    drop_ball(person_gps_x,person_gps_y,plane.location.global_frame.lat,plane.location.global_frame.lon)
+    drop_ball(person_gps_x,person_gps_y,plane.location.global_frame.lat,plane.location.global_frame.lon,velocity_of_plane)
 
 
 
