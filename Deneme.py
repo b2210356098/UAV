@@ -182,8 +182,10 @@ try:
                     cv2.imwrite(str(i)+"_"+str(confs) + "_person.png", img)
                     #print(str(i) + "-> Person Founded " + str(confs) + "\n")
 
-            except:
-                pass
+            except Exception as e:
+                 t_file = open("Thresholds.txt","a")
+                t_file.write("ERORRR :"+e)
+                t_file.close()
 
 
 
