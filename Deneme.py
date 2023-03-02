@@ -21,7 +21,7 @@ photo_limit = 5
 
 x_center = 0  # x location in photograph
 y_center = 0  # y location in photograph
-shapes = [0, 0]
+shapes = [640, 480]
 
 founded_time = 0  # The time, when the target is found
 wait_time = 2  # The time we want to wait for taking second photo
@@ -67,7 +67,7 @@ def gps_calculation(plane_lat, plane_lon, plane_lat2, plane_lon2, photo_x, photo
 
         real_x = yukselikteki_birim * x
         real_y = yukselikteki_birim * y
-        
+
         return [real_x, real_y]
 
     plane_dist_x, plane_dist_y = distance_calculation(photo_x, photo_y, image)
@@ -111,15 +111,30 @@ def servo_control(repeat, sleep, pvm, freq, x1, x2):
 
 
 def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
- 
-    m, k, A, g = 1, 1, 1, 9.8
+
+    m, k, A, g = 0.18, 1, 0.1, 9.8
     
     v_lim = math.sqrt(m * g / (k * A))
-    
-    ball_drop_time = plane.location.global_frame.alt * 2 / (3 * v_lim)
-    
+    try:
+        if 15 < plane.location.global_frame.alt<50:
+            ball_drop_time = plane.location.global_frame.alt * 2 / (3 * v_lim)
+        else:
+            ball_drop_time = 30 * 2 / (3 * v_lim)
+    except:
+        ball_drop_time = 30 * 2 / (3 * v_lim)
+
     drop_distance = vel * ball_drop_time
-    
+    txt= open("Thresholds.txt","a")
+    txt.write("V limit: "+str(v_lim))
+    txt.write(" Ball Drop Time: "+str(ball_drop_time))
+    txt.write(" Drop Distance: "+str(drop_distance))
+    txt.write(" Current_x: "+str(current_x))
+    txt.write(" Current_y: "+str(current_y))
+    txt.write(" Current_alt: "+str(plane.location.global_frame.alt))
+    txt.write(" person_gps_x: "+str(person_gps_x))
+    txt.write(" person_gps_y: "+str(person_gps_y))
+    txt.close()
+
     if ((current_x - person_gps_x) ** 2 + (current_y - person_gps_y) ** 2) <= drop_distance ** 2:
         servo_control(1, 0.5, 33, 40, 5, 12.5)
         servo_control(1, 0.5, 32, 40, 12.5, 5)
@@ -148,8 +163,11 @@ try:
 
                         person_gps_x = gps_calculation(first_x, first_y, second_x, second_y, shapes)[0]
                         person_gps_y = gps_calculation(first_x, first_y, second_x, second_y, shapes)[1]
+                        t_file.write("Velocity : " + velocity_of_plane)
 
-                        drop_ball(person_gps_x, person_gps_y, plane.location.global_frame.lat,plane.location.global_frame.lon,velocity_of_plane)
+
+
+                        drop_ball(person_gps_x, person_gps_y, plane.location.global_frame.lat, plane.location.global_frame.lon, velocity_of_plane)
 
                 # If person not detected, it searches for person and takes its photo and coordinates
 
@@ -176,16 +194,14 @@ try:
                         img = cv2.rectangle(img, box, (0, 255, 0), thickness=2)
                         img = cv2.putText(img, classNames[classId - 1].upper() + str(confs), (box[0], box[1]),
                                           cv2.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 2)
-                    
-                    
+
+
                     t_file.write(str(i) + "-> Person Founded " + str(confs) + "\n")
                     cv2.imwrite(str(i)+"_"+str(confs) + "_person.png", img)
                     #print(str(i) + "-> Person Founded " + str(confs) + "\n")
 
-            except Exception as e:
-                 t_file = open("Thresholds.txt","a")
-                t_file.write("ERORRR :"+e)
-                t_file.close()
+            except:
+                pass
 
 
 
