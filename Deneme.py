@@ -3,6 +3,7 @@ import cv2
 import math
 import haversine as hs
 from dronekit import connect
+
 import serial
 import RPi.GPIO as GPIO
 
@@ -11,16 +12,19 @@ import RPi.GPIO as GPIO
 t_file = open("Thresholds.txt", "w")
 
 flight_time = 10 # minute
-photo_limit = 50
+photo_limit = 5
 wait_for_delete = 3 #second
 wait_for_fly = 0.10 #second
 
 
 # Connection
 plane = connect("/dev/ttyACM0", wait_ready=False)
+
 while (True):
-        if(plane.location.global_frame.lat!=None):
-                break
+    print("Waiting For GPS")
+    if(plane.location.global_frame.lat!=None):
+          break
+
 print("Armable, armed, version, velocity, alt,lat,lon")
 print(plane.is_armable)
 print(plane.armed)
@@ -57,13 +61,13 @@ def servo_control(repeat, sleep, pvm, freq, x1, x2):
 
 def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
 
-    m, k, A, g = 0.18, 1, 0.1, 9.8
+    m, k, A, g = 0.18, 0.5, 0.1, 9.8
 
     v_lim = math.sqrt(m * g / (k * A))
     ball_drop_time = (30 / v_lim) * (3 / 2)
     drop_distance = vel * ball_drop_time
 
-    t_file.write("V limit: " + str(v_lim))
+    t_file.write(" V limit: " + str(v_lim))
     t_file.write(" Ball Drop Time: " + str(ball_drop_time))
     t_file.write(" Drop Distance: " + str(drop_distance))
     t_file.write(" Current_x: " + str(current_x))
@@ -121,6 +125,7 @@ while (time.time()-start_time<flight_time*60):
 
             if time.time()-last_time >= wait_for_delete:
                 i = 0
+
             if len(classIds)!=0:
                 last_time = time.time()
 
