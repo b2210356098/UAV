@@ -1,19 +1,20 @@
 import time
 import cv2
 import math
-t_file = open("Thresholds.txt", "w")
 import haversine as hs
-
 from dronekit import connect
 import serial
 import RPi.GPIO as GPIO
+
+
+
+t_file = open("Thresholds.txt", "w")
 
 flight_time = 10 # minute
 photo_limit = 50
 wait_for_delete = 3 #second
 wait_for_fly = 0.10 #second
 
-time.sleep(wait_for_fly)
 
 # Connection
 plane = connect("/dev/ttyACM0", wait_ready=False)
@@ -29,6 +30,9 @@ print(plane.velocity)
 print(plane.location.global_frame.alt)
 print(plane.location.global_frame.lat)
 print(plane.location.global_frame.lon)
+
+time.sleep(wait_for_fly)
+
 
 def servo_control(repeat, sleep, pvm, freq, x1, x2):
 
@@ -73,6 +77,7 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
     distance = (hs.haversine(loc1, loc2) * 1000)
 
     if distance <= drop_distance :
+        t_file.write("The ball was left\n\n\n\n\n\n\n\n")
         servo_control(1,1, 33, 80, 5, 12.5)
         servo_control(1, 1, 32, 35, 12.5, 5)
         return True
