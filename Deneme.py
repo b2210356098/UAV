@@ -14,7 +14,7 @@ t_file = open("Thresholds.txt", "w")
 flight_time = 10 # minute
 photo_limit = 5
 wait_for_delete = 3 #second
-wait_for_fly = 0.10 #second
+wait_for_fly = 10 #second
 
 
 # Connection
