@@ -8,6 +8,12 @@ from dronekit import connect
 import serial
 import RPi.GPIO as GPIO
 
+flight_time = 10 # minute
+photo_limit = 50
+wait_for_delete = 3 #second
+wait_for_fly = 0.10 #second
+
+time.sleep(wait_for_fly)
 
 # Connection
 plane = connect("/dev/ttyACM0", wait_ready=False)
@@ -65,19 +71,13 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
     loc1 = (first_x,first_y)
     loc2 = (current_x,current_y)
     distance = (hs.haversine(loc1, loc2) * 1000)
-    
+
     if distance <= drop_distance :
         servo_control(1,1, 33, 80, 5, 12.5)
         servo_control(1, 1, 32, 35, 12.5, 5)
         return True
 
 
-flight_time = 10 # minute
-photo_limit = 50
-wait_for_delete = 3 #second
-wait_for_fly = 0.10 #second
-
-time.sleep(wait_for_fly)
 
 
 
