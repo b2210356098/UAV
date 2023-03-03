@@ -1,7 +1,7 @@
 import time
 import cv2
 import math
-t_file = open("Thresholds.txt", "a")
+t_file = open("Thresholds.txt", "w")
 import haversine as hs
 
 from dronekit import connect
