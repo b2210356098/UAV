@@ -13,7 +13,7 @@ plane = connect("/dev/ttyACM0", wait_ready=False)
 while (True):
         if(plane.location.global_frame.lat!=None):
                 break
-print("Armable, armed, version, velocity, alt,lon,lat")
+print("Armable, armed, version, velocity, alt,lat,lon")
 print(plane.is_armable)
 print(plane.armed)
 print(plane.version)
