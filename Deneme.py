@@ -2,6 +2,7 @@ import time
 import cv2
 import math
 t_file = open("Thresholds.txt", "a")
+import haversine as hs
 
 from dronekit import connect
 import serial
@@ -49,7 +50,7 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
     m, k, A, g = 0.18, 1, 0.1, 9.8
 
     v_lim = math.sqrt(m * g / (k * A))
-    ball_drop_time = (30 /v_lim)*(3/2)
+    ball_drop_time = (30 / v_lim) * (3 / 2)
     drop_distance = vel * ball_drop_time
 
     t_file.write("V limit: " + str(v_lim))
@@ -60,21 +61,17 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
     t_file.write(" Current_alt: " + str(plane.location.global_frame.alt))
     t_file.write(" person_gps_x: " + str(person_gps_x))
     t_file.write(" person_gps_y: " + str(person_gps_y))
-    R = 6373.0
 
-    dlon = person_gps_y - current_y
-    dlat = person_gps_x - current_x
-    a = (math.sin(dlat / 2)) ** 2 + math.cos(current_x) * math.cos(person_gps_x) * (math.sin(dlon / 2)) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    distance = R * c
-    print(distance)
-
+    loc1 = (first_x,first_y)
+    loc2 = (current_x,current_y)
+    distance = (hs.haversine(loc1, loc2) * 1000)
+    
     if distance <= drop_distance :
         servo_control(1,1, 33, 80, 5, 12.5)
         servo_control(1, 1, 32, 35, 12.5, 5)
         return True
-    
-    
+
+
 flight_time = 10 # minute
 photo_limit = 50
 wait_for_delete = 3 #second
