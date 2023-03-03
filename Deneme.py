@@ -49,7 +49,7 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
     m, k, A, g = 0.18, 1, 0.1, 9.8
 
     v_lim = math.sqrt(m * g / (k * A))
-    ball_drop_time = 30 * 2 / (3 * v_lim)
+    ball_drop_time = (30 /v_lim)*(3/2)
     drop_distance = vel * ball_drop_time
 
     t_file.write("V limit: " + str(v_lim))
