@@ -33,16 +33,7 @@ try:
     x,y,a = 0,0,0
     loc1 = (plane.location.global_frame.lat, plane.location.global_frame.lon)
     loc2 = (x,y)
-    """while a<10:
-        
-        if ((hs.haversine(loc1, loc2) * 1000)<10):
-            a+=1
-            for i in range(10):
-                print("Lat Diff : ",plane.location.global_frame.lat-x," Lon Diff : ",plane.location.global_frame.lon-y," Alt Diff : ",plane.location.global_frame.alt-a)
-                x = plane.location.global_frame.lat
-                y = plane.location.global_frame.lon
-                a = plane.location.global_frame.alt
-                time.sleep(0.2)"""
+   
     for t in range(100):
         a = 0
         if ((hs.haversine(loc1, loc2) * 1000)<10 and a<10):
@@ -57,8 +48,8 @@ try:
         else:
             a = 0
 
-except:
-    pass
+except Exception as e:
+    print(e)
 
 
 
