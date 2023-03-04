@@ -38,6 +38,7 @@ print(plane.location.global_frame.lat)
 print(plane.location.global_frame.lon)
 
 time.sleep(wait_for_fly)
+print("Flying")
 
 
 def servo_control(repeat, sleep, pvm, freq, x1, x2):
@@ -119,6 +120,8 @@ start_time = time.time()
 first_x = 0
 first_y = 0
 photo_founded = False
+found_time = time.time()
+
 while (time.time()-start_time<flight_time*60):
     try:
         success,img = cap.read()
@@ -150,7 +153,7 @@ while (time.time()-start_time<flight_time*60):
                 t_file = open("Sentences.txt", "a")
                 t_file.write("Person GPS : " + str(first_x) +" "+ str(first_y)+ "\n")
                 t_file.close()
-
+                found_time= time.time()
                 cv2.imwrite("finally.png",img)
                 photo_founded = True
 
@@ -158,7 +161,7 @@ while (time.time()-start_time<flight_time*60):
 
             #cv2.imshow("Output",img)
             #cv2.waitKey(1)
-            if photo_founded:
+            if photo_founded and time.time()-found_time() >=10:
                 drop_ball(first_x,first_y,plane.location.global_frame.lat,plane.location.global_frame.lon,20)
                 if drop_ball(first_x,first_y,plane.location.global_frame.lat,plane.location.global_frame.lon,20):
                     t_file = open("Sentences.txt", "a")
