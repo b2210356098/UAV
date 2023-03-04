@@ -4,17 +4,19 @@ import math
 import haversine as hs
 from dronekit import connect
 
-import serial
-import RPi.GPIO as GPIO
 
+t_file = open("Sentences.txt", "w")
+t_file.write(" ")
+t_file.close()
 
-
-t_file = open("Thresholds.txt", "w")
 
 flight_time = 10 # minute
 photo_limit = 5
 wait_for_delete = 3 #second
 wait_for_fly = 10 #second
+
+import serial
+import RPi.GPIO as GPIO
 
 
 # Connection
@@ -60,32 +62,34 @@ def servo_control(repeat, sleep, pvm, freq, x1, x2):
 
 
 def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
-
+    
     m, k, A, g = 0.18, 0.5, 0.1, 9.8
 
     v_lim = math.sqrt(m * g / (k * A))
     ball_drop_time = (30 / v_lim) * (3 / 2)
+    
     drop_distance = vel * ball_drop_time
-
-    t_file.write(" V limit: " + str(v_lim))
-    t_file.write(" Ball Drop Time: " + str(ball_drop_time))
-    t_file.write(" Drop Distance: " + str(drop_distance))
-    t_file.write(" Current_x: " + str(current_x))
-    t_file.write(" Current_y: " + str(current_y))
-    t_file.write(" Current_alt: " + str(plane.location.global_frame.alt))
-    t_file.write(" person_gps_x: " + str(person_gps_x))
-    t_file.write(" person_gps_y: " + str(person_gps_y))
-
+    
+    
+   
     loc1 = (first_x,first_y)
     loc2 = (current_x,current_y)
     distance = (hs.haversine(loc1, loc2) * 1000)
 
     if distance <= drop_distance :
-        t_file.write("The ball was left\n\n\n\n\n\n\n\n")
+        t_file = open("Sentences.txt", "a")
+        t_file.write(" V limit: " + str(v_lim))
+        t_file.write(" Ball Drop Time: " + str(ball_drop_time))
+        t_file.write(" Drop Distance: " + str(drop_distance))
+        t_file.write(" Current_x: " + str(current_x))
+        t_file.write(" Current_y: " + str(current_y))
+        t_file.write(" Current_alt: " + str(plane.location.global_frame.alt))
+        t_file.write(" person_gps_x: " + str(person_gps_x))
+        t_file.write(" person_gps_y: " + str(person_gps_y))
+        t_file.close()
         servo_control(1,1, 33, 80, 5, 12.5)
         servo_control(1, 1, 32, 35, 12.5, 5)
         return True
-
 
 
 
@@ -117,45 +121,52 @@ first_y = 0
 photo_founded = False
 while (time.time()-start_time<flight_time*60):
     try:
-        if not photo_founded :
-            success,img = cap.read()
+        success,img = cap.read()
 
-            classIds,confs,bbox=net.detect(img,confThreshold = 0.5)
-
-
-            if time.time()-last_time >= wait_for_delete:
-                i = 0
-
-            if len(classIds)!=0:
-                last_time = time.time()
-
-                for classId,confidence ,box in zip(classIds.flatten(),confs.flatten(),bbox):
-                    img = cv2.rectangle(img, box, (0, 255, 0), thickness=2)
-                    img = cv2.putText(img, classNames[classId - 1].upper()+str(confs), (box[0], box[1]), cv2.FONT_HERSHEY_COMPLEX, 2,(0, 255, 0), 2)
-
-                i += 1
-                t_file.write(str(i)+ "-> Person Founded "+str(confs)+"\n")
-                cv2.imwrite(str(i)+".png",img)
-                print(str(i)+ "-> Person Founded "+str(confs))
+        classIds,confs,bbox=net.detect(img,confThreshold = 0.5)
 
 
-                if i>=photo_limit:
-                    first_x = plane.location.global_frame.lat
-                    first_y = plane.location.global_frame.lon
-                    t_file.write("Person GPS : " + str(first_x) +" "+ str(first_y)+ "\n")
+        if time.time()-last_time >= wait_for_delete:
+            i = 0
 
-                    cv2.imwrite("mission.png",img)
-                    photo_founded = True
+        if len(classIds)!=0:
+            last_time = time.time()
+
+            for classId,confidence ,box in zip(classIds.flatten(),confs.flatten(),bbox):
+                img = cv2.rectangle(img, box, (0, 255, 0), thickness=2)
+                img = cv2.putText(img, classNames[classId - 1].upper()+str(confs), (box[0], box[1]), cv2.FONT_HERSHEY_COMPLEX, 2,(0, 255, 0), 2)
+
+            i += 1
+            t_file = open("Sentences.txt", "a")
+            t_file.write(str(i)+ "-> Person Founded "+str(confs)+"\n")
+            t_file.close()
+            cv2.imwrite(str(i)+"_"+str(confs)+".png",img)
+            print(str(i)+ "-> Person Founded "+str(confs))
+
+
+            if i>=photo_limit:
+                first_x = plane.location.global_frame.lat
+                first_y = plane.location.global_frame.lon
+                t_file = open("Sentences.txt", "a")
+                t_file.write("Person GPS : " + str(first_x) +" "+ str(first_y)+ "\n")
+                t_file.close()
+
+                cv2.imwrite("finally.png",img)
+                photo_founded = True
 
 
 
             #cv2.imshow("Output",img)
             #cv2.waitKey(1)
-        else:
+            if photo_founded:
+                drop_ball(first_x,first_y,plane.location.global_frame.lat,plane.location.global_frame.lon,20)
+                if drop_ball(first_x,first_y,plane.location.global_frame.lat,plane.location.global_frame.lon,20):
+                    t_file = open("Sentences.txt", "a")
+                    t_file.write("Ball just left")
+                    t_file.close()
+                    break
+               
 
-            drop_ball(first_x,first_y,plane.location.global_frame.lat,plane.location.global_frame.lon,20)
-            if drop_ball(first_x,first_y,plane.location.global_frame.lat,plane.location.global_frame.lon,20):
-                break
 
     except Exception as e:
         print(e)
