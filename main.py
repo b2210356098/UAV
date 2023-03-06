@@ -1,347 +1,167 @@
-from dronekit import Command, connect, VehicleMode, LocationGlobalRelative
-from pymavlink import mavutil
 import time
-import os
-import math
 import cv2
+import math
+import haversine as hs
+from dronekit import connect
+
+t_file = open("Sentences.txt", "w")
+
+flight_time = 10  # minute
+photo_limit = 5
+wait_for_delete = 3  # second
+wait_for_fly = 10  # second
+
+import serial
+import RPi.GPIO as GPIO
+
+# Connection
+plane = connect("/dev/ttyACM0", wait_ready=False)
+
+tour = 0
+while (True):
+    print(str(tour)+"-) Waiting For GPS")
+
+    time.sleep(0.1)
+    tour+=1
+    if (plane.location.global_frame.lat != None):
+        break
+
+print("Armable, armed, version, velocity, alt,lat,lon")
+print("Armable : " ,plane.is_armable)
+print("Armed : " ,plane.armed)
+print("Version : " ,plane.version)
+print("Velocity : " ,plane.velocity)
+
+print("Alt : " ,plane.location.global_frame.alt)
+print("Lat : " ,plane.location.global_frame.lat)
+print("Lon : " ,plane.location.global_frame.lon)
+print("Waiting for " + str(wait_for_fly) + " seconds")
+
+time.sleep(wait_for_fly)
+t_file.write("Flying..."+ "\n")
+#print("Flying...")
 
 
-plane = connect("127.0.0.1:14550", wait_ready=False)
-
-home_x = plane.location.global_frame.lat
-home_y = plane.location.global_frame.lon
-
-altitude = 15
-
-gps_loc = [[-35.36291924, 149.16524853],
-           [-35.36291127, 149.16568725],
-           [-35.36322241, 149.16564782]]
-
-
-
-
-def takeoff(height):
-    if plane.location.global_relative_frame.alt > height * 0.85:
-        return
-                
-    while plane.is_armable is not True:
-        print("Drone is not armable")
-        time.sleep(1)
-        pass
-
-
-    print("Drone is armable")
-
-    plane.mode = VehicleMode("GUIDED")
-
-    plane.armed = True
-
-    while plane.armed is not True:
-        print("Drone is arming...")
-        time.sleep(0.5)
-        pass
-
-    print("Drone has just armed")
-
-    plane.simple_takeoff(height)
-
-    while plane.location.global_relative_frame.alt < height * 0.9:
-        print("Drone is rising")
-        time.sleep(1)
-        pass
-
-    plane.mode = VehicleMode("AUTO")
-
-def add_mission():
-    global plane_command
-    plane_command = plane.commands
-    plane_command.next = 0
-
-    plane_command.clear()
-    time.sleep(1)
-
-    # TAKEOFF
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
-                0, 0, 0, 0, altitude))
-
-    # WAYPOINT
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0,
-                0, 0, 0, gps_loc[0][0], gps_loc[0][1], altitude))
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0,
-                0, 0, 0, gps_loc[1][0], gps_loc[1][1], altitude))
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0,
-                0, 0, 0, gps_loc[2][0], gps_loc[2][1], altitude))
-
-    # RETURN TO HOME
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0,
-                0, 0, 0, home_x, home_y, altitude))
-
-    # VERIFICATION
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0,
-                0, 0, 0, 0, 0, 0, 0, 0))
-
-    plane_command.upload()
-    print("Commands are loading...")
-
-def fly_to_person(x, y):
-
-    global plane_command
-    plane_command = plane.commands
-
-    plane_command.clear()
-    time.sleep(1)
-
-    # TAKEOFF
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0,
-                0, 0, 0, 0, altitude))
-
-    # WAYPOINT
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_WAYPOINT, 0, 0, 0,
-                0, 0, 0, x, y, altitude))
-
-    # RETURN TO HOME
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0,
-                0, 0, 0, 0, 0, 0, 0, 0))
-
-    # VERIFICATION
-    plane_command.add(
-        Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_RETURN_TO_LAUNCH, 0,
-                0, 0, 0, 0, 0, 0, 0, 0))
-
-    plane_command.upload()
-    print("Commands are loading...")
-
-def gps_calculation(plane_lat, plane_lon, plane_lat2, plane_lon2, photo_x, photo_y, shape):
-
-    # Fotoğraftaki kordinatları alarak tespit edilen cismin uçağa olan gerçek uzaklığını döndüyor
-    def distance_calculation(x, y, shape):
-        birim_kısa = math.sqrt((443 - 234) ** 2 + (76 - 61) ** 2)  # Defterin kısa kenarının birim uzunluğu
-        birim_uzun = math.sqrt((234 - 258) ** 2 + (76 - 368) ** 2)  # Defterin uzun kenarının birim uzunluğu
-        birim_alan = 640 * 480  # Toplam birim alan
-
-        reel_uzun = 29.5  # Defterin gerçekteki uzun kenarının cm cinsinden uzunluğu
-        reel_kısa = 20.8  # Defterin gerçekteki kısa kenarının cm cinsinden uzunluğu
-        reel_uzaklık = 158.5  # Kameranı ölçülen alana uzaklığı
-        reel_alan = birim_alan * (reel_kısa * reel_uzun) / (
-                    birim_uzun * birim_kısa)  # 158.5 cm uzaklıktaki kameranın gördüğü alan
-
-        yükseklik = 2500  # Hesaplanmak istenen yükseklik
-        yükseklik_alan = (reel_alan * (yükseklik ** 2)) / (
-                    reel_uzaklık ** 2)  # Hesaplanmak istenen yükseklikteki alanın cm2 değeri
-
-        alan_oranı = yükseklik_alan / birim_alan  # Birimkarenin ifade ettiği cm2
-        birim_oranı = math.sqrt(alan_oranı)  # Her bir birimin ifade ettiği cm
-
-
-        # Merkezi orijin olarak alıyor
-        x = x - shape[1] / 2
-        y = -y + shape[0] / 2
-
-        reel_x_cm = x * birim_oranı
-        reel_y_cm = y * birim_oranı
-
-        return [reel_x_cm,reel_y_cm]
-
-    plane_dist_x, plane_dist_y = distance_calculation(photo_x, photo_y, shape)
-
-    # Uçağın uçtuğu yol ile  coğrafik kuzey noktası arasındaki açıyı buluyor
+def servo_control(repeat, sleep, pvm, freq, x1, x2):
+    t_file = open("Sentences.txt", "a")
+    t_file.write("Servo is working on: " + str(pvm)+ "\n")
+    t_file.close()
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(pvm, GPIO.OUT)
+    p = GPIO.PWM(pvm, freq)
+    p.start(50)
+    i = 0
     try:
-        angle = math.atan((plane_lat2 - plane_lat) / (plane_lon2 - plane_lon)) * 57.2957795
 
+        while i < repeat:
+            p.ChangeDutyCycle(x1)
+            time.sleep(sleep)
+            p.ChangeDutyCycle(x2)
+            time.sleep(sleep)
+            i += 1
     except:
-        angle = 89
-    # Hedefin coğrafik kordinatlara göre uçağa olan uzaklığını buluyor
-    real_x = plane_dist_x * math.cos(angle) + plane_dist_y * math.sin(angle)
-    real_y = -plane_dist_x * math.sin(angle) + plane_dist_y * math.cos(angle)
-
-    # Hedefin gps kordinatlarını buluyor
-    gps_x = plane_lat + (180 / math.pi) * (real_y / 6378137)
-    gps_y = plane_lon + (180 / math.pi) * (real_x / 6378137) / math.cos(plane_lat * 57.2957795)
+        p.stop()
+        GPIO.cleanup()
 
 
-    return(gps_x, gps_y)
+def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
+    m, k, A, g = 0.18, 0.5, 0.1, 9.8
+
+    v_lim = math.sqrt(m * g / (k * A))
+    ball_drop_time = (30 / v_lim) * (3 / 2)
+
+    drop_distance = vel * ball_drop_time
+    
+    
+    drop_distance_pred = 30 #meter 
+    loc1 = (first_x, first_y)
+    loc2 = (current_x, current_y)
+    distance = (hs.haversine(loc1, loc2) * 1000)
+
+    if distance <= drop_distance_pred:
+        t_file = open("Sentences.txt", "a")
+        t_file.write(" ")
+        t_file.write(" V limit: " + str(v_lim) + "\n")
+        t_file.write(" Ball Drop Time: " + str(ball_drop_time)+ "\n")
+        t_file.write(" Drop Distance: " + str(drop_distance)+ "\n")
+        t_file.write(" Current_x: " + str(current_x)+ "\n")
+        t_file.write(" Current_y: " + str(current_y)+ "\n")
+        t_file.write(" Current_alt: " + str(plane.location.global_frame.alt)+ "\n")
+        t_file.write(" person_gps_x: " + str(person_gps_x)+ "\n")
+        t_file.write(" person_gps_y: " + str(person_gps_y)+ "\n")
+        t_file.close()
+        servo_control(1, 1, 33, 80, 5, 12.5)
+        servo_control(1, 1, 32, 35, 12.5, 5)
+        return True
 
 
+cap = cv2.VideoCapture(0)
+cap.set(3, 640)
+cap.set(4, 480)
 
-start = time.time()
-pid = os.fork()
-if pid > 0:
-        
+classNames = ["person"]
+
+configPath = "ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt"
+weightPath = "frozen_inference_graph.pb"
+
+net = cv2.dnn_DetectionModel(weightPath, configPath)
+net.setInputSize(320, 320)
+net.setInputScale(1.0 / 127.5)
+net.setInputMean((127.5, 127.5, 127.5))
+net.setInputSwapRB(True)
+
+i = 0
+last_time = time.time()
+start_time = time.time()
+first_x = 0
+first_y = 0
+photo_founded = False
+found_time = time.time()
+t_file.write("Searching For Person"+ "\n")
+#print("Searching For Person...")
+t_file.close()
+while (time.time() - start_time < flight_time * 60):
     try:
+        success, img = cap.read()
+        classIds, confs, bbox = net.detect(img, confThreshold=0.5)
 
-        takeoff(altitude)
+        if time.time() - last_time >= wait_for_delete:
+            i = 0
+
+        if len(classIds) != 0:
+            last_time = time.time()
+
+            for classId, confidence, box in zip(classIds.flatten(), confs.flatten(), bbox):
+                img = cv2.rectangle(img, box, (0, 255, 0), thickness=2)
+                img = cv2.putText(img, classNames[classId - 1].upper() + str(confs), (box[0], box[1]),
+                                  cv2.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 2)
+
+            i += 1
+            t_file = open("Sentences.txt", "a")
+            t_file.write(str(i) + "-> Found a Person " + str(confs) + "\n")
+            t_file.close()
+            cv2.imwrite(str(i) + "_" + str(confs) + ".png", img)
+            #print(str(i) + "-> Found a Person " + str(confs))
+
+            if i >= photo_limit and not photo_founded:
+                first_x = plane.location.global_frame.lat
+                first_y = plane.location.global_frame.lon
+                t_file = open("Sentences.txt", "a")
+                t_file.write("Person GPS : " + str(first_x) + " " + str(first_y) + "\n")
+                t_file.close()
+                found_time = time.time()
+                cv2.imwrite("finally.png", img)
+                photo_founded = True
+
+            # cv2.imshow("Output",img)
+            # cv2.waitKey(1)
+        if photo_founded and time.time() - found_time() >= 10:
+            drop_ball(first_x, first_y, plane.location.global_frame.lat, plane.location.global_frame.lon, 20)
 
 
-        add_mission()
-        plane_command.next = 0
 
-        plane.mode = VehicleMode("AUTO")  # Necessary for load commands
 
-        checker = 0
-        while True:
-            with open("current_gps.txt","w") as f:
-                f.write(str(plane.location.global_frame.lat))
-                f.write("\n")
-                f.write(str(plane.location.global_frame.lon))
 
-            next_waypoint = plane_command.next
-            if checker != next_waypoint:
-                checker = next_waypoint
-                print(f"Next command : {next_waypoint}")
-            
-
-            if next_waypoint == 5:
-                print("First Tour Completed")
-                break
-
-        
-        f =open("gps_cor.txt","r")
-        gps_list =f.read().split("\n")
-        x_drop = float(gps_list[0])
-        y_drop = float(gps_list[1])
-        
-        f.close()
-
-        print(gps_list)
-
-        plane_command.next = 0
-          
-        fly_to_person(x_drop, y_drop)  
-
-        plane.mode = VehicleMode("AUTO")  # Görev yüklemek icin  gerekli
-        while True:
-            next_waypoint = plane_command.next
-
-            print(f"Next command : {next_waypoint}")
-            time.sleep(1)
-            if next_waypoint == 3:
-                print("Landing...")
-                pass
-            if next_waypoint == 4:
-                print("Mission Completed")
-                break
-        
     except Exception as e:
         print(e)
-        if  plane.location.global_relative_frame.alt < altitude * 0.85:
-            takeoff(altitude)
-     
 
-    finally:
-        plane.mode = VehicleMode("RTL")
-
-    exit()
-
-else:
-
-    x_center = 0
-    y_center = 0
-
-    classNames=["person"]
-
-    configPath ="ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt"
-    weightPath ="frozen_inference_graph.pb"
-
-    net = cv2.dnn_DetectionModel(weightPath,configPath)
-    net.setInputSize(320,320)
-    net.setInputScale(1.0/127.5)
-    net.setInputMean((127.5,127.5,127.5))
-    net.setInputSwapRB(True)
-    i=0
-        
-    cap = cv2.VideoCapture(0)
-    cap.set(3, 640)
-    cap.set(4, 480)
-
-
-    founded_time = 0
-    wait_time = 2
-    first_x = 0
-    first_y = 0
-    second_x = 0
-    second_y = 0
-    gps_taked = False
-    photo_founded = False
-    photo_limit=5
-    shape = 0
-
-    while True:
-        with open("current_gps.txt","r") as f:
-            if f.read() == None:
-                continue
-
-        #Person Detection
-        try:
-            # If it takes photo and time difference is bigger than wait_time take second coordinates and continue
-            if photo_founded:
-                if not gps_taked:
-                    if time.time()-founded_time>=wait_time:
-
-                        with open("current_gps.txt","r") as f:
-                            a=f.read().split("\n")
-
-                            second_x = float(a[0])
-                            second_y = float(a[1])
-                            gps_taked = True
-                            print("SECOND GPS :",second_x,second_y)
-
-                            break
-
-                continue
-
-            success, img = cap.read()
-
-            classIds,confs,bbox=net.detect(img,confThreshold = 0.5)
-            shape = img.shape
-            if len(classIds)!=0:
-
-                print(i+1, "-> It found a person ")
-                i += 1
-
-                if i >= photo_limit :
-                   
-
-                    with open("current_gps.txt","r") as f:
-                        while True:
-
-                            a=f.read().split("\n")
-                            print(a)
-                            if a !=['']:
-                                first_x = float(a[0])
-                                first_y = float(a[1])
-                             
-                                print("FIRST GPS :",first_x,first_y)
-                                break
-
-
-                    photo_founded =True
-                    cv2.imwrite("target.png", img)
-                    founded_time=time.time()
-
-                for classId,confidence ,box in zip(classIds.flatten(),confs.flatten(),bbox):
-
-                    x_center = ( box[0] + box[2])/2
-                    y_center = ( box[1] + box[3])/2
-
-
-        except Exception as e:
-            print(e)
-            pass
-
-
-    print(first_x,first_y,second_x,second_y,x_center,y_center,shape )
-    file = open("gps_cor.txt","w")     
-    file.write(str(gps_calculation(first_x,first_y,second_x,second_y,x_center,y_center,shape)[0])+"\n")  
-    file.write(str(gps_calculation(first_x,first_y,second_x,second_y,x_center,y_center,shape)[1]))  
-
-    file.close()
-    exit()
