@@ -71,9 +71,9 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
     ball_drop_time = (30 / v_lim) * (3 / 2)
 
     drop_distance = vel * ball_drop_time
-    
-    
-    drop_distance_pred = 30 #meter 
+
+
+    drop_distance_pred = 30 #meter
     loc1 = (first_x, first_y)
     loc2 = (current_x, current_y)
     distance = (hs.haversine(loc1, loc2) * 1000)
@@ -163,5 +163,8 @@ while (time.time() - start_time < flight_time * 60):
 
 
     except Exception as e:
-        print(e)
+        #print(e)
+        t_file = open("Sentences.txt", "a")
+        t_file.write("Error Occured : ",e)
+        t_file.close()
 
