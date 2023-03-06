@@ -17,7 +17,8 @@ wait_for_fly = 0.10 #second
 
 
 # Connection
-plane = connect("/dev/ttyACM0", wait_ready=False)
+#plane = connect("/dev/ttyACM0", wait_ready=False)# usb
+plane = connect("/dev/serial0", wait_ready=False)#telemetry 
 
 while (True):
     print("Waiting For GPS")
