@@ -15,7 +15,8 @@ import serial
 import RPi.GPIO as GPIO
 
 # Connection
-plane = connect("/dev/ttyACM0", wait_ready=False)
+#plane = connect("/dev/ttyACM0", wait_ready=False)# usb
+plane = connect("/dev/serial0", wait_ready=False)#telemetry 
 
 tour = 0
 while (True):
