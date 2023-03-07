@@ -10,6 +10,8 @@ flight_time = 10  # minute
 photo_limit = 5
 wait_for_delete = 3  # second
 wait_for_fly = 10  # second
+drop_dist_initial= 30
+quit_range_wait_time = 15 #second 
 
 import serial
 import RPi.GPIO as GPIO
@@ -74,12 +76,12 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
     drop_distance = vel * ball_drop_time
 
 
-    drop_distance_pred = 30 #meter
+    
     loc1 = (first_x, first_y)
     loc2 = (current_x, current_y)
     distance = (hs.haversine(loc1, loc2) * 1000)
 
-    if distance <= drop_distance_pred:
+    if distance <= drop_dist_initial:
         t_file = open("Sentences.txt", "a")
         t_file.write(" ")
         t_file.write(" V limit: " + str(v_lim) + "\n")
@@ -93,7 +95,7 @@ def drop_ball(person_gps_x, person_gps_y, current_x, current_y, vel):
         t_file.close()
         servo_control(1, 1, 33, 80, 5, 12.5)
         servo_control(1, 1, 32, 35, 12.5, 5)
-        return True
+        
 
 
 cap = cv2.VideoCapture(0)
@@ -156,7 +158,7 @@ while (time.time() - start_time < flight_time * 60):
 
             # cv2.imshow("Output",img)
             # cv2.waitKey(1)
-        if photo_founded and time.time() - found_time() >= 10:
+        if photo_founded and time.time() - found_time() >= quit_range_wait_time:
             drop_ball(first_x, first_y, plane.location.global_frame.lat, plane.location.global_frame.lon, 20)
 
 
