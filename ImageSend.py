@@ -9,7 +9,7 @@ def compress(image_file):
     return
 
 server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-server.bind(("", 5297)) #8888
+server.bind(("", 9999)) #8888 9999 5297
 server.listen(5)
 cap = cv2.VideoCapture(0)
 cap.set(3,320) # width is id no 3
