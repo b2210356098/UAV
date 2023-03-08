@@ -123,11 +123,20 @@ found_time = time.time()
 t_file.write("Searching For Person"+ "\n")
 #print("Searching For Person...")
 t_file.close()
+
+serial_photo_timer = time.time()
+serial_holder = 1
+
 while (time.time() - start_time < flight_time * 60):
     try:
         success, img = cap.read()
         classIds, confs, bbox = net.detect(img, confThreshold=0.5)
 
+        if time.time()-serial_photo_timer >= 0.2:
+            cv2.imwrite(str(serial_holder)+"_Serial_photo.png",img)
+            serial_photo_timer= time.time()
+            serial_holder+=1
+        
         if time.time() - last_time >= wait_for_delete:
             i = 0
 
