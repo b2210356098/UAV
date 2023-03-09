@@ -133,7 +133,7 @@ while (time.time() - start_time < flight_time * 60):
         classIds, confs, bbox = net.detect(img, confThreshold=0.5)
 
         if time.time()-serial_photo_timer >= 0.2:
-            cv2.imwrite(str(serial_holder)+"_Serial_photo.png",img)
+            cv2.imwrite("Serial_photo_"+str(serial_holder) +".png", img)
             serial_photo_timer= time.time()
             serial_holder+=1
         
@@ -175,8 +175,5 @@ while (time.time() - start_time < flight_time * 60):
 
 
     except Exception as e:
-        #print(e)
-        t_file = open("Sentences.txt", "a")
-        t_file.write("Error Occured : ",e)
-        t_file.close()
+        pass
 
