@@ -29,7 +29,6 @@ while (True):
     if (plane.location.global_frame.lat != None):
         break
 
-print("Armable, armed, version, velocity, alt,lat,lon")
 print("Armable : " ,plane.is_armable)
 print("Armed : " ,plane.armed)
 print("Version : " ,plane.version)
